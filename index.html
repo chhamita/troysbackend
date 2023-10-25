@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Image Upload</title>
+</head>
+<body>
+  <input type="file" id="imageInput">
+  <button id="uploadButton">Upload</button>
+
+  <script>
+    document.getElementById('uploadButton').addEventListener('click', async () => {
+      const imageInput = document.getElementById('imageInput');
+      const selectedFile = imageInput.files[0];
+
+      if (selectedFile) {
+        const reader = new FileReader();
+
+        reader.onload = async function () {
+          const base64Image = reader.result.split(',')[1];
+          const data = {
+            title: 'Sample Title',
+            description: 'Sample Description',
+            imagePath: base64Image,
+          };
+
+          const response = await fetch('/api/items', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+          });
+
+          if (response.ok) {
+            console.log('Item created successfully');
+          } else {
+            console.error('Error creating item');
+          }
+        };
+
+        reader.readAsDataURL(selectedFile);
+      }
+    });
+  </script>
+</body>
+</html>
