@@ -57,26 +57,6 @@ router.get('/items/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to retrieve the item' });
   }
 });
-/********************** */
-// Update an item
-/*
-router.put('/items/:id', async (req, res) => {
-  try {
-    const { title, description, imagePath } = req.body;
-    const item = await Item.findById(req.params.id);
-    if (!item) {
-      return res.status(404).json({ error: 'Item not found' });
-    }
-    item.title = title;
-    item.description = description;
-    item.imagePath = imagePath;
-    await item.save();
-    res.json(item);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update the item' });
-  }
-});
-*/
 
 // Update an item
 router.put('/items/:id', async (req, res) => {
