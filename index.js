@@ -131,7 +131,7 @@ app.put('/api/item/:id', async (req, res) => {
 
 
 app.use('/api', createProxyMiddleware('/items', { // Proxy only the '/items' route
-  target: 'http://localhost:5173/'
+  target: 'https://troyswildweather.com/'
   ,
   changeOrigin: true,
   onProxyRes: function (proxyRes, req, res) {
