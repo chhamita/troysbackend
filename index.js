@@ -47,8 +47,6 @@ app.post('/api/item', async (req, res) => {
 
     // Save the item to the database
     await newItem.save();
-
-    console.log('Item saved to the "items" collection:', newItem);
     res.json(newItem); // Respond with the saved item
   } catch (error) {
     console.error('Error saving item:', error);
@@ -97,7 +95,6 @@ app.delete('/api/item/:id', async (req, res) => {
     // If the item exists, delete it
     await Item.findByIdAndRemove(itemId);
 
-    console.log('Item deleted:', itemId);
     res.json({ message: 'Item deleted successfully' });
   } catch (error) {
     console.error('Error deleting item:', error);
@@ -125,7 +122,6 @@ app.put('/api/item/:id', async (req, res) => {
     // Save the updated item
     await item.save();
 
-    console.log('Blog updated:', item);
     res.json(item);
   } catch (error) {
     console.error('Error updating blog:', error);
@@ -148,6 +144,11 @@ app.use('/api', createProxyMiddleware('/items', { // Proxy only the '/items' rou
   }
 }));
 
+
+app.get("/test",(req,res)=>{
+  console.log("hello test api is hit")
+  res.send({msg:"hello test api is hit"})
+})
 
 app.listen(4500, () => {
   console.log('Server is running at 4500');
