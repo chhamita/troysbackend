@@ -14,6 +14,7 @@ router.post('/items', async (req, res) => {
     await newItem.save();
     res.json(newItem);
   } catch (error) {
+    console.error('Error creating item:', error);
     res.status(500).json({ error: 'Failed to create the item' });
   }
 });
