@@ -7,6 +7,9 @@ const Item = require('../models/item');
 router.post('/items', async (req, res) => {
   try {
     const { title, description, base64Image } = req.body;
+    console.log('title',title);
+    console.log('description',description);
+    console.log('base64Image',base64Image);
     // Convert base64 to a Buffer
     const imageBuffer = Buffer.from(base64Image, 'base64');
     const newItem = new Item({ title, description, image: imageBuffer });
@@ -23,6 +26,7 @@ router.post('/items', async (req, res) => {
 router.get('/items', async (req, res) => {
   try {
     const items = await Item.find();
+
 
     // Convert images to base64 URLs
     const itemsWithBase64Image = items.map((item) => ({
