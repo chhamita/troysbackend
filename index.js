@@ -13,7 +13,7 @@ const routes = require('./routes/routes');
 const Item = require('./models/item');
 const url = process.env.DATABASE_URL;
 const client = new MongoClient(url);
-const cors = require('cors');
+//const cors = require('cors');
 
 app.use(cors()); // Enable CORS for all routes before defining your routes
 app.use('/api', routes);
@@ -165,7 +165,7 @@ app.put('/api/item/:id', upload.single('image'), async (req, res) => {
 });
 
 app.use('/api', createProxyMiddleware('/items', { // Proxy only the '/items' route
-  target: 'https://troyswildweather.com/'
+  target: 'http://localhost:5173/'
   ,
   changeOrigin: true,
   onProxyRes: function (proxyRes, req, res) {
@@ -192,11 +192,8 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 console.log("test data added");
 app.use('/uploads', express.static('uploads'));
 
-// app.listen(4500, () => {
-//   console.log('Server is running at 4500');
-// });
-
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(4500, () => {
+  console.log('Server is running at 4500');
 });
+
+
