@@ -13,9 +13,10 @@ const routes = require('./routes/routes');
 const Item = require('./models/item');
 const url = process.env.DATABASE_URL;
 const client = new MongoClient(url);
+const cors = require('cors');
 
-app.use('/api', routes)
-app.use(cors());
+app.use(cors()); // Enable CORS for all routes before defining your routes
+app.use('/api', routes);
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 mongoose.connect(url, {
@@ -190,6 +191,12 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 console.log("test data added");
 app.use('/uploads', express.static('uploads'));
-app.listen(4500, () => {
-  console.log('Server is running at 4500');
+
+// app.listen(4500, () => {
+//   console.log('Server is running at 4500');
+// });
+
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
