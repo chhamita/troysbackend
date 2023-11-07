@@ -47,7 +47,12 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+//const upload = multer({ storage });
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // Set the file size limit to 10MB (adjust as needed)
+});
 
 // Add an endpoint for creating an item with a file upload
 app.post('/api/item', upload.single('image'), async (req, res) => {
