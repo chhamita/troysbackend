@@ -6,9 +6,10 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
+const multer = require('multer'); 
 
 const routes = require('./routes/routes');
-const multer = require('multer'); // For handling file uploads
+//const multer = require('multer'); // For handling file uploads
 const Item = require('./models/item');
 const url = process.env.DATABASE_URL;
 const client = new MongoClient(url);
@@ -35,24 +36,50 @@ database.once('open', () => {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.post('/api/item', async (req, res) => {
+
+// Multer setup for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads'); // Create an 'uploads' directory for storing uploaded files
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname); // Rename the file to include a timestamp
+  },
+});
+
+const upload = multer({ storage });
+
+// Add an endpoint for creating an item with a file upload
+app.post('/api/item', upload.single('image'), async (req, res) => {
   try {
-    const { title, description, imagePath } = req.body;
+    const { title, description } = req.body;
+    const imagePath = req.file ? req.file.filename : ''; // Get the file path
+
     // Create a new item with the provided data
     const newItem = new Item({
       title: title,
       description: description,
-      imagePath: imagePath, // Store the image as base64 data
+      imagePath: imagePath, // Store the image path in the database
     });
 
     // Save the item to the database
     await newItem.save();
-    res.json(newItem); // Respond with the saved item
+    res.status(201).json(newItem); // Respond with the saved item
   } catch (error) {
     console.error('Error saving item:', error);
     res.status(500).json({ error: 'Failed to save the item' });
   }
 });
+
+// Add an endpoint for file uploads
+app.post('/api/upload', upload.single('image'), (req, res) => {
+  // 'image' is the name of the field in the form
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  res.status(201).json({ imagePath: req.file.filename });
+});
+
 
 app.get('/api/item/:id', async (req, res) => {
   try {
@@ -102,33 +129,34 @@ app.delete('/api/item/:id', async (req, res) => {
   }
 });
 
-
-app.put('/api/item/:id', async (req, res) => {
+// Add an endpoint for updating an item with a file upload
+app.put('/api/item/:id', upload.single('image'), async (req, res) => {
   try {
-    const itemId = req.params.id; // Get the item ID from the URL
-    const { title, description, imagePath } = req.body;
-
-    // Check if the item exists before attempting to update it
+    const itemId = req.params.id;
+    const { title, description } = req.body;
     const item = await Item.findById(itemId);
+
     if (!item) {
-      return res.status(404).json({ error: 'Blog not found' });
+      return res.status(404).json({ error: 'Item not found' });
     }
 
-    // Update the item's properties
+    // Update the item's title and description
     item.title = title;
     item.description = description;
-    item.imagePath = imagePath;
 
-    // Save the updated item
+    // Check if a new image file was provided
+    if (req.file) {
+      const imagePath = req.file.filename; // Get the file path
+      item.imagePath = imagePath;
+    }
+
     await item.save();
-
     res.json(item);
   } catch (error) {
-    console.error('Error updating blog:', error);
-    res.status(500).json({ error: 'Failed to update the blog' });
+    console.error('Error updating item:', error);
+    res.status(500).json({ error: 'Failed to update the item' });
   }
 });
-
 
 app.use('/api', createProxyMiddleware('/items', { // Proxy only the '/items' route
   target: 'https://troyswildweather.com/'
@@ -146,8 +174,8 @@ app.use('/api', createProxyMiddleware('/items', { // Proxy only the '/items' rou
 
 
 app.get("/test",(req,res)=>{
-  console.log("hello test api is hit")
-  res.send({msg:"hello test api is hit"})
+  console.log("hello test api is hit1")
+  res.send({msg:"hello test api is hit1"})
 })
 
 // Increase payload size limit (e.g., 10MB)
@@ -156,6 +184,7 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 
 console.log("test data added");
+app.use('/uploads', express.static('uploads'));
 app.listen(4500, () => {
   console.log('Server is running at 4500');
 });
