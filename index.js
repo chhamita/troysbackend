@@ -40,7 +40,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 const AWS = require('aws-sdk');
-
 const awsAccessKeyId = process.env.YOUR_ACCESS_KEY_ID
 const yourSecretAccessKey = process.env.YOUR_SECRET_ACCESS_KEY
 
@@ -103,7 +102,6 @@ app.get('/api/item/:id', async (req, res) => {
   }
 });
 
-
 app.get('/api/item', (req, res) => {
   Item.find({})
     .exec()
@@ -118,15 +116,12 @@ app.get('/api/item', (req, res) => {
 
 app.delete('/api/item/:id', async (req, res) => {
   try {
-    const itemId = req.params.id; // Get the item ID from the URL
-
-    // Check if the item exists before attempting to delete it
+    const itemId = req.params.id;
     const item = await Item.findById(itemId);
     if (!item) {
       return res.status(404).json({ error: 'Item not found' });
     }
 
-    // If the item exists, delete it
     await Item.findByIdAndRemove(itemId);
 
     res.json({ message: 'Item deleted successfully' });
@@ -135,7 +130,6 @@ app.delete('/api/item/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to delete the item' });
   }
 });
-
 
 app.put('/api/item/:id', upload.single('image'), async (req, res) => {
   try {
@@ -171,20 +165,12 @@ app.use('/api', createProxyMiddleware('/items', {
   ,
   changeOrigin: true,
   onProxyRes: function (proxyRes, req, res) {
-    // Add the necessary headers for CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
     proxyRes.headers['Access-Control-Allow-Origin'] = '*';
   }
 }));
-
-
-app.get("/test", (req, res) => {
-  console.log("hello test api is hit1")
-  res.send({ msg: "hello test api is hit1" })
-})
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));

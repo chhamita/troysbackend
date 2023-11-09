@@ -1,39 +1,34 @@
 const express = require('express');
 const router = express.Router();
 module.exports = router;
-const multer = require('multer'); // For handling file uploads 
+const multer = require('multer');  
 const Item = require('../models/item');
 
-// Multer setup for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads'); // Specify the same 'uploads' directory as in index.js
+    cb(null, 'uploads'); 
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname); // Rename the file to include a timestamp
+    cb(null, Date.now() + '-' + file.originalname); 
   },
 });
 
-// const upload = multer({ storage });
-
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // Set the file size limit to 10MB (adjust as needed)
+  limits: { fileSize: 10 * 1024 * 1024 }, 
 });
 
 router.post('/items', upload.single('image'), async (req, res) => {
   try {
     const { title, description } = req.body;
-    const imagePath = req.file ? req.file.filename : ''; // Get the file path
+    const imagePath = req.file ? req.file.filename : ''; 
 
-    // Create a new item with the provided data
     const newItem = new Item({
       title: title,
       description: description,
-      imagePath: imagePath, // Store the image path in the database
+      imagePath: imagePath, 
     });
 
-    // Save the item to the database
     await newItem.save();
 
     res.status(201).json(newItem);
