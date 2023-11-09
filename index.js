@@ -6,16 +6,18 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
-const multer = require('multer'); 
+const multer = require('multer');
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage })
 
 const routes = require('./routes/routes');
-//const multer = require('multer'); // For handling file uploads
+
 const Item = require('./models/item');
 const url = process.env.DATABASE_URL;
 const client = new MongoClient(url);
-//const cors = require('cors');
 
-app.use(cors()); // Enable CORS for all routes before defining your routes
+app.use(cors()); 
 app.use('/api', routes);
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
@@ -24,68 +26,67 @@ mongoose.connect(url, {
   useUnifiedTopology: true,
 });
 
-const database = mongoose.connection; 
+const database = mongoose.connection;
 
 database.on('error', (err) => {
   console.error('MongoDB connection error:', err);
 });
 
 database.once('open', () => {
-    console.log('Connected to MongoDB');
+  console.log('Connected to MongoDB');
 });
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+const AWS = require('aws-sdk');
 
-// Multer setup for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads'); // Create an 'uploads' directory for storing uploaded files
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname); // Rename the file to include a timestamp
-  },
+const awsAccessKeyId = process.env.YOUR_ACCESS_KEY_ID
+const yourSecretAccessKey = process.env.YOUR_SECRET_ACCESS_KEY
+
+AWS.config.update({
+  accessKeyId: awsAccessKeyId,
+  secretAccessKey: yourSecretAccessKey,
+  region: 'us-east-1',
 });
 
-//const upload = multer({ storage });
+const s3 = new AWS.S3();
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // Set the file size limit to 10MB (adjust as needed)
-});
-
-// Add an endpoint for creating an item with a file upload
 app.post('/api/item', upload.single('image'), async (req, res) => {
+
   try {
-    const { title, description } = req.body;
-    const imagePath = req.file ? req.file.filename : ''; // Get the file path
+    const { title, description } = req.body
+    const file = req.file
 
-    // Create a new item with the provided data
-    const newItem = new Item({
-      title: title,
-      description: description,
-      imagePath: imagePath, // Store the image path in the database
+    if (!file) return res.status(400).json({ error: 'No file provided' })
+
+    const bucketName = 'troysimages'
+
+    const params = {
+      'Bucket': bucketName,
+      'Key': `uploads/${file.originalname}`,
+      'Body': file.buffer,
+      'ContentType': file.mimetype
+    }
+
+    const { key } = await s3.upload(params).promise()
+
+    const blogObject = new Item({
+      'title': title,
+      'description': description,
+      'imagePath': `${key}`
+    })
+
+    if (key) await blogObject.save()
+
+    res.status(201).json({
+      newItem: blogObject
     });
-
-    // Save the item to the database
-    await newItem.save();
-    res.status(201).json(newItem); // Respond with the saved item
   } catch (error) {
     console.error('Error saving item:', error);
-    res.status(500).json({ error: 'Failed to save the item' });
+    res.status(500).json({ error: `Failed to save the item. ${error.message}` });
   }
 });
-
-// Add an endpoint for file uploads
-app.post('/api/upload', upload.single('image'), (req, res) => {
-  // 'image' is the name of the field in the form
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded' });
-  }
-  res.status(201).json({ imagePath: req.file.filename });
-});
-
 
 app.get('/api/item/:id', async (req, res) => {
   try {
@@ -135,7 +136,7 @@ app.delete('/api/item/:id', async (req, res) => {
   }
 });
 
-// Add an endpoint for updating an item with a file upload
+
 app.put('/api/item/:id', upload.single('image'), async (req, res) => {
   try {
     const itemId = req.params.id;
@@ -152,7 +153,8 @@ app.put('/api/item/:id', upload.single('image'), async (req, res) => {
 
     // Check if a new image file was provided
     if (req.file) {
-      const imagePath = req.file.filename; // Get the file path
+      // const imagePath = req.file.filename; // Get the file path
+      const imagePath = req.file.filename;
       item.imagePath = imagePath;
     }
 
@@ -164,8 +166,8 @@ app.put('/api/item/:id', upload.single('image'), async (req, res) => {
   }
 });
 
-app.use('/api', createProxyMiddleware('/items', { // Proxy only the '/items' route
-  target: 'http://localhost:5173/'
+app.use('/api', createProxyMiddleware('/items', { 
+  target: 'http://localhost:5174/'
   ,
   changeOrigin: true,
   onProxyRes: function (proxyRes, req, res) {
@@ -179,18 +181,13 @@ app.use('/api', createProxyMiddleware('/items', { // Proxy only the '/items' rou
 }));
 
 
-app.get("/test",(req,res)=>{
+app.get("/test", (req, res) => {
   console.log("hello test api is hit1")
-  res.send({msg:"hello test api is hit1"})
+  res.send({ msg: "hello test api is hit1" })
 })
 
-// Increase payload size limit (e.g., 10MB)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-
-
-console.log("test data added");
-app.use('/uploads', express.static('uploads'));
 
 app.listen(4500, () => {
   console.log('Server is running at 4500');
