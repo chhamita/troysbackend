@@ -167,7 +167,7 @@ app.put('/api/item/:id', upload.single('image'), async (req, res) => {
 });
 
 app.use('/api', createProxyMiddleware('/items', { 
-  target: 'http://localhost:5174/'
+  target: 'https://troyswildweather.com/'
   ,
   changeOrigin: true,
   onProxyRes: function (proxyRes, req, res) {
