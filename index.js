@@ -141,15 +141,20 @@ app.put('/api/item/:id', upload.single('image'), async (req, res) => {
       return res.status(404).json({ error: 'Item not found' });
     }
 
-    // Update the item's title and description
     item.title = title;
     item.description = description;
+    const bucketName = 'troysimages';
 
-    // Check if a new image file was provided
     if (req.file) {
-      // const imagePath = req.file.filename; // Get the file path
-      const imagePath = req.file.filename;
-      item.imagePath = imagePath;
+      const params = {
+        'Bucket': bucketName,
+        Key: `uploads/${req.file.originalname}`,
+        Body: req.file.buffer,
+        ContentType: req.file.mimetype
+      };
+
+      const { Key } = await s3.upload(params).promise();
+      item.imagePath = Key;
     }
 
     await item.save();
